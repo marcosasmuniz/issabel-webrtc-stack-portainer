@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Webphone JsSIP</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jssip/3.10.0/jssip.min.js"></script>
+</head>
+<body>
+  <h2>Webphone SIP 1001</h2>
+  <input type="text" id="destino" placeholder="Número para ligar">
+  <button onclick="ligar()">Ligar</button>
+  <div id="status"></div>
+
+  <script>
+    const socket = new JsSIP.WebSocketInterface('wss://pabx.w2itelecom.com.br:443/ws');
+    const configuration = {
+      uri: 'sip:1001@pabx.w2itelecom.com.br',
+      password: 'senha_segura',
+      sockets: [socket],
+    };
+
+    const ua = new JsSIP.UA(configuration);
+    ua.start();
+
+    function ligar() {
+      const destino = document.getElementById('destino').value;
+      const session = ua.call(`sip:${destino}@pabx.w2itelecom.com.br`, {
+        mediaConstraints: { audio: true, video: false },
+      });
+
+      session.on('accepted', () => {
+        document.getElementById('status').innerText = 'Chamada em andamento...';
+      });
+
+      session.on('ended', () => {
+        document.getElementById('status').innerText = 'Chamada encerrada';
+      });
+    }
+
+    ua.on('newRTCSession', function(e) {
+      const session = e.session;
+      if (session.direction === 'incoming') {
+        if (confirm("Receber chamada de: " + session.remote_identity.uri.user + "?")) {
+          session.answer({
+            mediaConstraints: { audio: true, video: false }
+          });
+
+          session.on('accepted', () => {
+            document.getElementById('status').innerText = 'Chamada atendida';
+          });
+
+          session.on('ended', () => {
+            document.getElementById('status').innerText = 'Chamada encerrada';
+          });
+        } else {
+          session.terminate();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
