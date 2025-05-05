@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  issabel:
+    image: programacaogpt/issabel-webrtc:latest
+    container_name: issabel-webrtc
+    networks:
+      - portainer_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webrtc.rule=Host(`pabx.w2itelecom.com.br`)"
+      - "traefik.http.routers.webrtc.entrypoints=websecure"
+      - "traefik.http.routers.webrtc.tls.certresolver=le"
+      - "traefik.http.services.webrtc.loadbalancer.server.port=8088"
+
+  webphone:
+    image: nginx:alpine
+    container_name: jswebrtc
+    volumes:
+      - ./webphone:/usr/share/nginx/html:ro
+    networks:
+      - portainer_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webphone.rule=Host(`pabx.w2itelecom.com.br`) && PathPrefix(`/webphone`)"
+      - "traefik.http.routers.webphone.entrypoints=websecure"
+      - "traefik.http.routers.webphone.tls.certresolver=le"
+      - "traefik.http.services.webphone.loadbalancer.server.port=80"
+
+networks:
+  portainer_default:
+    external: true
